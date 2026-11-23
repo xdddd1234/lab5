@@ -1,153 +1,160 @@
-# Лабораторна робота №5 — UML Component Diagram
+# Специфікація UML Component Diagram
 
-## 1. Мета роботи
+## 1. Загальна інформація
 
-Мета роботи — побудувати компонентну модель бібліотечної системи, показати її архітектуру, основні модулі, інтерфейси, залежності та межу системи.
+**Лабораторна робота:** №5 — UML Component Diagram.
 
-Для моделювання обрано UML Component Diagram у PlantUML.
+**Система:** бібліотечна система.
 
-## 2. Опис системи
+**Основний процес:** UC-03 «Видача книги».
 
-Бібліотечна система призначена для роботи з читачами, книгами та видачами.
+**Мета:** визначити архітектурні компоненти системи, їхні інтерфейси, залежності, межі та зв'язок із попередніми моделями.
 
-Основний процес — UC-03 «Видача книги».
+## 2. Межа системи
 
-Бібліотекар вибирає читача, книгу та дату повернення. Система перевіряє дані, після чого створює Loan або повідомляє про відмову.
+Межа системи позначена як **Library System**.
 
-## 3. Компоненти системи
+Усередині розміщені програмні компоненти, що забезпечують видачу книги.
 
-### Library UI
+Зовнішній користувач — **Бібліотекар**. Він взаємодіє з Library UI.
 
-Інтерфейс бібліотекаря.
+## 3. Архітектурні шари
 
-Відповідає за введення даних та відображення результатів операцій.
+### Presentation Layer
 
-### Library API
+**Library UI** — інтерфейс бібліотекаря, через який надсилається запит на видачу книги та відображається результат.
 
-Приймає запити від Library UI та передає їх відповідним сервісам.
+### API Layer
 
-### LoanService
+**Library API** — приймає запити від Library UI, передає їх до LoanService та повертає результат.
 
-Реалізує основну бізнес-логіку видачі книги.
+### Business Logic Layer
 
-Перевіряє читача, доступність книги та дату повернення. У разі успіху створює Loan.
+**LoanService** — координує процес видачі книги, перевіряє бізнес-правила та створює запис Loan.
 
-### ReaderService
+**ReaderService** — надає операції пошуку та перевірки читачів.
 
-Надає операції для пошуку та перевірки читачів.
+**BookService** — надає операції пошуку книг і перевірки їхньої доступності.
 
-### BookService
-
-Надає операції для пошуку книг та перевірки їх доступності.
+**Clock** — надає поточну дату для перевірки строку повернення.
 
 ### Data Access Layer
 
-Містить компоненти:
+**ReaderRepository** — доступ до даних читачів.
 
-- ReaderRepository
-- BookRepository
-- LoanRepository
+**BookRepository** — доступ до даних книг.
 
-Вони відповідають за доступ до даних читачів, книг і видач.
+**LoanRepository** — пошук активних видач і створення записів Loan.
 
-### Library Database
+### Data Layer
 
-Зберігає сутності Reader, Book, Author, Category та Loan, визначені в лабораторній №1.
+**Library Database** — зберігає сутності Reader, Book, Author, Category та Loan.
 
-## 4. Інтерфейси
+## 4. Provided та Required Interfaces
 
-| Інтерфейс | Хто надає (provided) | Хто використовує (required) |
-|---|---|---|
-| ILibraryAPI | Library API | Library UI |
-| ILoanService | LoanService | Library API |
-| IReaderService | ReaderService | LoanService |
-| IBookService | BookService | LoanService |
-| IReaderRepository | ReaderRepository | ReaderService |
-| IBookRepository | BookRepository | BookService |
-| ILoanRepository | LoanRepository | LoanService |
-| IDataStorage | Library Database | Репозиторії |
+| Інтерфейс | Надає (Provided) | Використовує (Required) | Основні операції |
+|---|---|---|---|
+| ILibraryAPI | Library API | Library UI | submitLoan() |
+| ILoanService | LoanService | Library API | issueBook() |
+| IReaderService | ReaderService | LoanService | findReaderById() |
+| IBookService | BookService | LoanService | findBookById(), isBookAvailable() |
+| IReaderRepository | ReaderRepository | ReaderService | findById() |
+| IBookRepository | BookRepository | BookService | findById() |
+| ILoanRepository | LoanRepository | LoanService | findActiveLoan(), createLoan() |
+| IClock | Clock | LoanService | today() |
+| IDataStorage | Library Database | Три репозиторії | read(), write() |
 
-Provided-інтерфейс означає функціональність, яку компонент надає іншим.
+Операції інтерфейсів наведені на концептуальному рівні. Їхні параметри та типи результатів можуть бути деталізовані під час реалізації.
 
-Required-інтерфейс означає функціональність, від якої компонент залежить.
+## 5. Основні залежності
 
-## 5. Залежності
+- Library UI → Library API.
+- Library API → LoanService.
+- LoanService → ReaderService.
+- LoanService → BookService.
+- LoanService → LoanRepository.
+- LoanService → Clock.
+- ReaderService → ReaderRepository.
+- BookService → BookRepository.
+- ReaderRepository → Library Database.
+- BookRepository → Library Database.
+- LoanRepository → Library Database.
 
-Основний ланцюг викликів:
+Залежності спрямовані від компонентів, які потребують функціональності, до інтерфейсів компонентів, які її надають.
 
-Library UI → Library API → LoanService.
+## 6. Підтримка UC-03 «Видача книги»
 
-LoanService використовує ReaderService, BookService та LoanRepository.
+Система підтримує чотири сценарії.
 
-ReaderService звертається до ReaderRepository.
+**SC-01 — Успішна видача.**
 
-BookService звертається до BookRepository.
+LoanService перевіряє читача, книгу, її доступність та дату повернення. Після успішних перевірок створюється запис Loan.
 
-Репозиторії працюють із Library Database.
+**SC-02 — Книга вже видана.**
 
-## 6. Межа системи
+Система виявляє активну видачу та відхиляє запит.
 
-У межах бібліотечної системи знаходяться:
+**SC-03 — Неправильна дата повернення.**
 
-- Library UI
-- Library API
-- LoanService
-- ReaderService
-- BookService
-- ReaderRepository
-- BookRepository
-- LoanRepository
-- Library Database
+LoanService перевіряє, що дата повернення не передує даті видачі.
 
-Бібліотекар є зовнішнім користувачем системи.
+**SC-04 — Читача не знайдено.**
 
-## 7. Зовнішні інтеграції
+ReaderService через ReaderRepository перевіряє існування читача. Якщо його немає, видача не виконується.
 
-У початкових сценаріях UC-03 немає обов'язкової інтеграції з платіжними системами, SMS, Email або OAuth.
+Для невдалих сценаріїв новий запис Loan не створюється.
 
-Тому для цієї архітектурної моделі такі сервіси не додаються як реалізовані компоненти.
+## 7. Результати операції
 
-За потреби в майбутньому можна додати зовнішній Identity Provider для автентифікації або Email Gateway для повідомлень. Це буде окремим розширенням архітектури.
+Після обробки запиту система формує результат:
 
-## 8. Зв'язок із попередніми лабораторними
+- **LoanIssued** — успішна видача.
+- **LoanRejected** — відхилення запиту із зазначенням причини.
 
-### Лабораторна №1 — Модель даних
+Результат передається за маршрутом:
 
-Library Database містить Reader, Book, Author, Category та Loan.
+LoanService → Library API → Library UI.
 
-### Лабораторна №2 — Вимоги
+У цій архітектурі ці назви описують результати операції. Окремий зовнішній сервіс повідомлень не передбачається.
 
-LoanService реалізує UC-03 та чотири сценарії:
+## 8. Зовнішні інтеграції
 
-- SC-01 — успішна видача.
-- SC-02 — книга вже видана.
-- SC-03 — неправильна дата повернення.
-- SC-04 — читача не знайдено.
+Payment, SMS/Email, OAuth/Identity Provider та зовнішні API не включені до поточного обсягу UC-03.
 
-### Лабораторна №3 — Sequence Diagram
+Попередні моделі не встановлюють обов'язкової залежності процесу видачі книги від таких інтеграцій.
 
-Компоненти Library UI, LoanService та репозиторії відповідають основним учасникам sequence-діаграм.
+Їх можна додати в майбутньому за наявності відповідних вимог.
 
-Library API, ReaderService та BookService є архітектурною деталізацією.
+## 9. Зв'язок із попередніми лабораторними
 
-### Лабораторна №4 — Activity Diagram
+**Лабораторна №1 — ER-модель.**
 
-Компонентна модель підтримує процес видачі книги, перевірки, створення Loan та надсилання результату бібліотекарю.
+Library Database зберігає сутності Reader, Book, Author, Category та Loan.
 
-## 9. Архітектурні рішення
+**Лабораторна №2 — Use Case.**
 
-Обрано багатошарову архітектуру:
+LoanService реалізує основні правила UC-03 та підтримує сценарії SC-01–SC-04.
 
-1. Presentation Layer — Library UI.
-2. API Layer — Library API.
-3. Business Logic Layer — сервіси.
-4. Data Access Layer — репозиторії.
-5. Data Layer — Library Database.
+**Лабораторна №3 — Sequence Diagram.**
 
-Такий поділ дозволяє відокремити інтерфейс користувача, бізнес-правила та роботу з даними.
+Збережено основні ролі Library UI, LoanService та репозиторіїв. Library API, ReaderService і BookService деталізують архітектуру. Clock забезпечує отримання поточної дати.
 
-## 10. Висновок
+**Лабораторна №4 — Activity Diagram.**
 
-Компонентна модель показує структуру бібліотечної системи, відповідальність модулів, їхні інтерфейси та залежності.
+Компоненти забезпечують перевірки читача, книги та дати, створення Loan і повернення результату LoanIssued або LoanRejected.
 
-Архітектура підтримує процес UC-03 «Видача книги» та узгоджується з основними моделями попередніх лабораторних.
+## 10. Результати AI-аудиту
+
+Під час аудиту визначено три основні питання:
+
+1. Узгодження нових компонентів із лабораторною №3.
+2. Деталізація provided/required-інтерфейсів.
+3. Відображення Clock і способу передавання результатів операції.
+
+Для їх усунення уточнено опис компонентів, додано IClock та основні операції інтерфейсів.
+
+## 11. Висновок
+
+Компонентна архітектура розділяє відповідальність між UI, API, бізнес-логікою, доступом до даних та базою даних.
+
+Запропонована модель підтримує процес UC-03 «Видача книги» та пов'язана з результатами лабораторних №1–4.
