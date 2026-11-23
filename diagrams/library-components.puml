@@ -23,6 +23,7 @@ rectangle "Library System\nМежа системи" as System {
     component "LoanService" as LoanService
     component "ReaderService" as ReaderService
     component "BookService" as BookService
+    component "Clock" as Clock
   }
 
   package "Data Access Layer" {
@@ -35,43 +36,49 @@ rectangle "Library System\nМежа системи" as System {
     database "Library Database\nReader, Book, Author,\nCategory, Loan" as DB
   }
 
-  interface "ILibraryAPI" as ILibraryAPI
-  interface "ILoanService" as ILoanService
-  interface "IReaderService" as IReaderService
-  interface "IBookService" as IBookService
-  interface "IReaderRepository" as IReaderRepository
-  interface "IBookRepository" as IBookRepository
-  interface "ILoanRepository" as ILoanRepository
-  interface "IDataStorage" as IDataStorage
+  interface "ILibraryAPI\nsubmitLoan()" as ILibraryAPI
+  interface "ILoanService\nissueBook()" as ILoanService
+  interface "IReaderService\nfindReaderById()" as IReaderService
+  interface "IBookService\nfindBookById()\nisBookAvailable()" as IBookService
 
-  API - ILibraryAPI
+  interface "IReaderRepository\nfindById()" as IReaderRepository
+  interface "IBookRepository\nfindById()" as IBookRepository
+  interface "ILoanRepository\nfindActiveLoan()\ncreateLoan()" as ILoanRepository
+
+  interface "IClock\ntoday()" as IClock
+  interface "IDataStorage\nread()\nwrite()" as IDataStorage
+
+  API -- ILibraryAPI
   UI ..> ILibraryAPI : requires
 
-  LoanService - ILoanService
+  LoanService -- ILoanService
   API ..> ILoanService : requires
 
-  ReaderService - IReaderService
+  ReaderService -- IReaderService
   LoanService ..> IReaderService : requires
 
-  BookService - IBookService
+  BookService -- IBookService
   LoanService ..> IBookService : requires
 
-  ReaderRepo - IReaderRepository
+  ReaderRepo -- IReaderRepository
   ReaderService ..> IReaderRepository : requires
 
-  BookRepo - IBookRepository
+  BookRepo -- IBookRepository
   BookService ..> IBookRepository : requires
 
-  LoanRepo - ILoanRepository
+  LoanRepo -- ILoanRepository
   LoanService ..> ILoanRepository : requires
 
-  DB - IDataStorage
+  Clock -- IClock
+  LoanService ..> IClock : requires
+
+  DB -- IDataStorage
   ReaderRepo ..> IDataStorage : requires
   BookRepo ..> IDataStorage : requires
   LoanRepo ..> IDataStorage : requires
 }
 
-Librarian --> UI : Видача книги
+Librarian --> UI : Запит на видачу книги
 
 note right of LoanService
   UC-03: Видача книги
@@ -80,10 +87,19 @@ note right of LoanService
   SC-02: Книга вже видана
   SC-03: Неправильна дата
   SC-04: Читача не знайдено
+
+  Результат:
+  LoanIssued або LoanRejected
+end note
+
+note right of Clock
+  Надає поточну дату
+  для перевірки строку
+  повернення книги.
 end note
 
 note bottom of DB
-  Модель даних з Lab 1:
+  Сутності з Lab 1:
   Reader, Book, Author,
   Category, Loan
 end note
@@ -92,6 +108,9 @@ note bottom of System
   Зовнішні інтеграції Payment,
   SMS/Email та OAuth не входять
   до поточного обсягу UC-03.
+
+  Результат видачі передається:
+  LoanService -> Library API -> Library UI.
 end note
 
 @enduml
