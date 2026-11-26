@@ -7,7 +7,6 @@ top to bottom direction
 skinparam componentStyle uml2
 skinparam packageStyle rectangle
 skinparam shadowing false
-skinparam linetype ortho
 skinparam nodesep 45
 skinparam ranksep 50
 
@@ -47,24 +46,24 @@ rectangle "Library System" {
   database "Library Database" as DB
 
   API -up- IAPI
-  UI ..down> IAPI : requires
+  UI ..> IAPI : requires
 
-  API ..down> Loan : issueBook()
+  API ..> Loan : issueBook()
 
-  Loan ..down> Reader : findReaderById()
-  Loan ..down> Book : findBookById()
+  Loan ..> Reader : findReaderById()
+  Loan ..> Book : findBookById()
 
-  Loan ..down> LR : findActiveLoan()\ncreateLoan()
+  Loan ..> LR : findActiveLoan()\ncreateLoan()
 
-  Reader ..down> RR : findById()
-  Book ..down> BR : findById()
+  Reader ..> RR : findById()
+  Book ..> BR : findById()
 
   Clock -- IClock
   Loan ..> IClock : requires
 
-  RR ..down> DB
-  BR ..down> DB
-  LR ..down> DB
+  RR ..> DB
+  BR ..> DB
+  LR ..> DB
 }
 
 Librarian --> UI
