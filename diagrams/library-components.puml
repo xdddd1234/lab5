@@ -1,15 +1,22 @@
 
 @startuml
-title Lab 5 - Library System Component Diagram
+title Library System - Component Diagram
 
-left to right direction
+top to bottom direction
+
 skinparam componentStyle uml2
 skinparam packageStyle rectangle
 skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 45
+skinparam ranksep 50
 
 actor "Бібліотекар" as Librarian
 
-rectangle "Library System\nМежа системи" as System {
+component "Identity Provider\n<<external>>" as IdP
+interface "IIdentity\nvalidateToken()" as IIdentity
+
+rectangle "Library System" {
 
   package "Presentation Layer" {
     component "Library UI" as UI
@@ -17,100 +24,68 @@ rectangle "Library System\nМежа системи" as System {
 
   package "API Layer" {
     component "Library API" as API
+    interface "ILibraryAPI\nsubmitLoan()" as IAPI
   }
 
   package "Business Logic Layer" {
-    component "LoanService" as LoanService
-    component "ReaderService" as ReaderService
-    component "BookService" as BookService
+    component "LoanService" as Loan
+    component "ReaderService" as Reader
+    component "BookService" as Book
+  }
+
+  package "Infrastructure Layer" {
     component "Clock" as Clock
+    interface "IClock\ntoday()" as IClock
   }
 
   package "Data Access Layer" {
-    component "ReaderRepository" as ReaderRepo
-    component "BookRepository" as BookRepo
-    component "LoanRepository" as LoanRepo
+    component "ReaderRepository" as RR
+    component "BookRepository" as BR
+    component "LoanRepository" as LR
   }
 
-  package "Data Layer" {
-    database "Library Database\nReader, Book, Author,\nCategory, Loan" as DB
-  }
+  database "Library Database" as DB
 
-  interface "ILibraryAPI\nsubmitLoan()" as ILibraryAPI
-  interface "ILoanService\nissueBook()" as ILoanService
-  interface "IReaderService\nfindReaderById()" as IReaderService
-  interface "IBookService\nfindBookById()\nisBookAvailable()" as IBookService
+  API -up- IAPI
+  UI ..down> IAPI : requires
 
-  interface "IReaderRepository\nfindById()" as IReaderRepository
-  interface "IBookRepository\nfindById()" as IBookRepository
-  interface "ILoanRepository\nfindActiveLoan()\ncreateLoan()" as ILoanRepository
+  API ..down> Loan : issueBook()
 
-  interface "IClock\ntoday()" as IClock
-  interface "IDataStorage\nread()\nwrite()" as IDataStorage
+  Loan ..down> Reader : findReaderById()
+  Loan ..down> Book : findBookById()
 
-  API -- ILibraryAPI
-  UI ..> ILibraryAPI : requires
+  Loan ..down> LR : findActiveLoan()\ncreateLoan()
 
-  LoanService -- ILoanService
-  API ..> ILoanService : requires
-
-  ReaderService -- IReaderService
-  LoanService ..> IReaderService : requires
-
-  BookService -- IBookService
-  LoanService ..> IBookService : requires
-
-  ReaderRepo -- IReaderRepository
-  ReaderService ..> IReaderRepository : requires
-
-  BookRepo -- IBookRepository
-  BookService ..> IBookRepository : requires
-
-  LoanRepo -- ILoanRepository
-  LoanService ..> ILoanRepository : requires
+  Reader ..down> RR : findById()
+  Book ..down> BR : findById()
 
   Clock -- IClock
-  LoanService ..> IClock : requires
+  Loan ..> IClock : requires
 
-  DB -- IDataStorage
-  ReaderRepo ..> IDataStorage : requires
-  BookRepo ..> IDataStorage : requires
-  LoanRepo ..> IDataStorage : requires
+  RR ..down> DB
+  BR ..down> DB
+  LR ..down> DB
 }
 
-Librarian --> UI : Запит на видачу книги
+Librarian --> UI
 
-note right of LoanService
-  UC-03: Видача книги
+IdP -- IIdentity
+API ..> IIdentity : requires
 
-  SC-01: Успішна видача
-  SC-02: Книга вже видана
-  SC-03: Неправильна дата
-  SC-04: Читача не знайдено
+note right of API
+  REQ-13:
+  Перевірка токена
+  та ролі бібліотекаря
+  перед викликом LoanService.
+end note
+
+note right of Loan
+  Доступність книги:
+  немає активного Loan
+  з return_date = NULL.
 
   Результат:
-  LoanIssued або LoanRejected
-end note
-
-note right of Clock
-  Надає поточну дату
-  для перевірки строку
-  повернення книги.
-end note
-
-note bottom of DB
-  Сутності з Lab 1:
-  Reader, Book, Author,
-  Category, Loan
-end note
-
-note bottom of System
-  Зовнішні інтеграції Payment,
-  SMS/Email та OAuth не входять
-  до поточного обсягу UC-03.
-
-  Результат видачі передається:
-  LoanService -> Library API -> Library UI.
+  LoanIssued / LoanRejected
 end note
 
 @enduml
