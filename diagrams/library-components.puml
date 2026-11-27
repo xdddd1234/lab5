@@ -1,0 +1,90 @@
+
+@startuml
+title Library System - Component Diagram
+
+top to bottom direction
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam nodesep 45
+skinparam ranksep 50
+
+actor "Бібліотекар" as Librarian
+
+component "Identity Provider\n<<external>>" as IdP
+interface "IIdentity\nvalidateToken()" as IIdentity
+
+rectangle "Library System" {
+
+  package "Presentation Layer" {
+    component "Library UI" as UI
+  }
+
+  package "API Layer" {
+    component "Library API" as API
+    interface "ILibraryAPI\nsubmitLoan()" as IAPI
+  }
+
+  package "Business Logic Layer" {
+    component "LoanService" as Loan
+    component "ReaderService" as Reader
+    component "BookService" as Book
+  }
+
+  package "Infrastructure Layer" {
+    component "Clock" as Clock
+    interface "IClock\ntoday()" as IClock
+  }
+
+  package "Data Access Layer" {
+    component "ReaderRepository" as RR
+    component "BookRepository" as BR
+    component "LoanRepository" as LR
+  }
+
+  database "Library Database" as DB
+
+  API -up- IAPI
+  UI ..> IAPI : requires
+
+  API ..> Loan : issueBook()
+
+  Loan ..> Reader : findReaderById()
+  Loan ..> Book : findBookById()
+
+  Loan ..> LR : findActiveLoan()\ncreateLoan()
+
+  Reader ..> RR : findById()
+  Book ..> BR : findById()
+
+  Clock -- IClock
+  Loan ..> IClock : requires
+
+  RR ..> DB
+  BR ..> DB
+  LR ..> DB
+}
+
+Librarian --> UI
+
+IdP -- IIdentity
+API ..> IIdentity : requires
+
+note right of API
+  REQ-13:
+  Перевірка токена
+  та ролі бібліотекаря
+  перед викликом LoanService.
+end note
+
+note right of Loan
+  Доступність книги:
+  немає активного Loan
+  з return_date = NULL.
+
+  Результат:
+  LoanIssued / LoanRejected
+end note
+
+@enduml
